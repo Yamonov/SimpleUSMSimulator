@@ -371,7 +371,7 @@
 
     // エッジを生成し、ぼかしを適用
     function createBlurredEdge(startDensity, endDensity, radius) {
-        const width = 40;
+        const width = 20;
         const gradient = [];
         const edgePosition = width / 2;
         
@@ -514,8 +514,8 @@
         }
         
         // 垂直グリッド
-        for (let i = 0; i <= 40; i++) {
-            const x = graphX + (graphWidth / 40) * i;
+        for (let i = 0; i <= 20; i++) {
+            const x = graphX + (graphWidth / 20) * i;
             ctx.beginPath();
             ctx.moveTo(x, graphY);
             ctx.lineTo(x, graphY + graphHeight);
@@ -541,8 +541,8 @@
         ctx.fillStyle = '#666';
         ctx.font = '10px Arial';
         ctx.textAlign = 'center';
-        for (let i = 0; i <= 40; i += 5) {
-            const x = graphX + (graphWidth / 40) * i;
+        for (let i = 0; i <= 20; i += 5) {
+            const x = graphX + (graphWidth / 20) * i;
             ctx.fillText(i.toString(), x, graphY + graphHeight + 15);
         }
 

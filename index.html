@@ -147,7 +147,6 @@
             text-align: center;
             width: 100%;
             min-width: 320px;
-            min-height: 400px;
             margin-top: 20px;
         }
         canvas {
@@ -162,7 +161,6 @@
         }
         #graphCanvas {
             width: 100%;
-            height: 400px;
             display: block;
         }
         .info {
@@ -308,7 +306,22 @@
         const dpr = window.devicePixelRatio || 1;
         const rect = container.getBoundingClientRect();
         const width = Math.floor(rect.width);
-        const height = 400; // 固定高さ
+        
+        // 画面の高さから必要な要素の高さを引いて、グラフが収まる高さを計算
+        const viewportHeight = window.innerHeight;
+        const controlsHeight = document.querySelector('.controls').offsetHeight;
+        const h1Height = document.querySelector('h1') ? document.querySelector('h1').offsetHeight : 0;
+        const marginTop = 20; // コンテナのmargin-top
+        const gradientBarsHeight = 40 * 2 + 20; // グラデーションバー2つ分 + 余白
+        const extraMargin = 40; // 追加の余白
+        
+        // 利用可能な高さを計算
+        const availableHeight = viewportHeight - controlsHeight - h1Height - marginTop - gradientBarsHeight - extraMargin;
+        
+        // 最小高さ200px、最大高さ600px、アスペクト比も考慮
+        const aspectRatio = 0.6; // 高さ/幅の比率
+        const heightByAspect = width * aspectRatio;
+        const height = Math.min(600, Math.max(200, Math.min(availableHeight, heightByAspect)));
         
         canvas.width = width * dpr;
         canvas.height = height * dpr;

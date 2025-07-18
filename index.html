@@ -36,8 +36,8 @@
         }
         .controls-left,
         .controls-right {
-            flex: 1 1 500px;
-            min-width: 500px;
+            flex: 1 1 320px;
+            min-width: 320px;
             display: flex;
             flex-direction: column;
         }
@@ -203,9 +203,8 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>USM簡易シミュレーター</h1>
-        
+</br>
+    <div class="container">        
         <div class="controls">
             <div class="controls-left">
                 <div class="control-group">
@@ -222,12 +221,6 @@
                             <div class="value-display" id="endDensityValue">200</div>
                             <div class="density-box" id="endDensityBox"></div>
                         </div>
-                    </div>
-                    <div class="density-gradient-bar">
-                        <canvas id="densityGradientBar"></canvas>
-                    </div>
-                    <div class="density-gradient-bar" style="margin-top:4px;">
-                        <canvas id="densityGradientBarPixel"></canvas>
                     </div>
                 </div>
             </div>
@@ -258,7 +251,12 @@
         <div class="canvas-container">
             <canvas id="usmCanvas"></canvas>
         </div>
-        
+        <div class="density-gradient-bar">
+            <canvas id="densityGradientBar"></canvas>
+        </div>
+        <div class="density-gradient-bar" style="margin-top:4px;">
+            <canvas id="densityGradientBarPixel"></canvas>
+        </div>
     </div></div>
 
 	<script>
@@ -485,7 +483,7 @@
 		drawDensityGradientBarPixel(sharpened);
 
 		// グラフの描画設定
-		const padX = 0.12 * canvas.clientWidth;
+		const padX = 0.06 * canvas.clientWidth;
 		const padY = 0.12 * canvas.clientHeight;
 		const graphWidth = canvas.clientWidth - padX * 2;
 		const graphHeight = canvas.clientHeight - padY * 2 - 40;
@@ -526,22 +524,11 @@
 		ctx.font = '12px Arial';
 		ctx.textAlign = 'center';
 		ctx.fillText('ピクセル位置', graphX + graphWidth / 2, graphY + graphHeight + 40);
-		ctx.save();
-		ctx.translate(20, graphY + graphHeight / 2);
-		ctx.rotate(-Math.PI / 2);
-		ctx.fillText('濃度値', 0, 0);
-		ctx.restore();
 
 		// ---- 目盛り ----
 		ctx.fillStyle = '#666';
 		ctx.font = '10px Arial';
 		ctx.textAlign = 'center';
-		// Y軸目盛り
-		for (let i = 0; i <= 10; i++) {
-			const value = Math.round((255 / 10) * i);
-			const y = graphY + graphHeight - (graphHeight / 10) * i;
-			ctx.fillText(value.toString(), graphX - 15, y + 3);
-		}
 		// X軸目盛り（ピクセル位置）
 		for (let i = 0; i <= 40; i += 2) {
 			const x = graphX + (graphWidth / 40) * i;

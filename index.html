@@ -188,30 +188,6 @@
             padding: 10px;
             margin: 10px 0;
         }
-        .density-gradient-bar {
-            width: 100%;
-            height: 40px;
-            margin-top: 14px;
-            margin-bottom: 0;
-            display: flex;
-            align-items: center;
-        }
-        #densityGradientBar {
-            width: 100%;
-            height: 40px;
-            display: block;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: #fff;
-        }
-        #densityGradientBarPixel {
-            width: 100%;
-            height: 40px;
-            display: block;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: #fff;
-        }
         @media (min-width: 800px) {
           .density-box {
             height: 36px;
@@ -267,20 +243,12 @@
         <div class="canvas-container">
             <canvas id="graphCanvas"></canvas>
         </div>
-        <div class="density-gradient-bar">
-            <canvas id="densityGradientBar"></canvas>
-        </div>
-        <div class="density-gradient-bar" style="margin-top:4px;">
-            <canvas id="densityGradientBarPixel"></canvas>
-        </div>
     </div>
 
     <script>
     // 変数宣言・要素取得
     const canvas = document.getElementById('graphCanvas');
     const ctx = canvas.getContext('2d');
-    const densityGradientBar = document.getElementById('densityGradientBar');
-    const densityGradientBarPixel = document.getElementById('densityGradientBarPixel');
 
     // コントロール要素
     const startDensityInput = document.getElementById('startDensity');
@@ -312,11 +280,10 @@
         const controlsHeight = document.querySelector('.controls').offsetHeight;
         const h1Height = document.querySelector('h1') ? document.querySelector('h1').offsetHeight : 0;
         const marginTop = 20; // コンテナのmargin-top
-        const gradientBarsHeight = 40 * 2 + 20; // グラデーションバー2つ分 + 余白
         const extraMargin = 40; // 追加の余白
         
         // 利用可能な高さを計算
-        const availableHeight = viewportHeight - controlsHeight - h1Height - marginTop - gradientBarsHeight - extraMargin;
+        const availableHeight = viewportHeight - controlsHeight - h1Height - marginTop - extraMargin;
         
         // 最小高さ200px、最大高さ600px、アスペクト比も考慮
         const aspectRatio = 0.6; // 高さ/幅の比率
@@ -410,51 +377,6 @@
         return { original: gradient, blurred: blurred };
     }
 
-    // 濃度グラデーションバーを描画
-    function drawDensityGradientBar(original) {
-        const barWidth = densityGradientBar.parentElement.offsetWidth;
-        const barHeight = 40;
-        const dpr = window.devicePixelRatio || 1;
-        
-        densityGradientBar.width = barWidth * dpr;
-        densityGradientBar.height = barHeight * dpr;
-        densityGradientBar.style.width = barWidth + 'px';
-        densityGradientBar.style.height = barHeight + 'px';
-        
-        const ctxBar = densityGradientBar.getContext('2d');
-        ctxBar.scale(dpr, dpr);
-        ctxBar.clearRect(0, 0, barWidth, barHeight);
-        
-        for (let x = 0; x < original.length; x++) {
-            const v = Math.round(original[x]);
-            ctxBar.fillStyle = `rgb(${v},${v},${v})`;
-            const w = barWidth / original.length;
-            ctxBar.fillRect(Math.floor(x * w), 0, Math.ceil(w), barHeight);
-        }
-    }
-
-    // ピクセルごとの濃度グラデーションバーを描画
-    function drawDensityGradientBarPixel(original) {
-        const pxCount = original.length;
-        const barHeight = 40;
-        const dpr = window.devicePixelRatio || 1;
-        
-        densityGradientBarPixel.width = pxCount * dpr;
-        densityGradientBarPixel.height = barHeight * dpr;
-        densityGradientBarPixel.style.width = pxCount + "px";
-        densityGradientBarPixel.style.height = barHeight + "px";
-        
-        const ctxPixel = densityGradientBarPixel.getContext('2d');
-        ctxPixel.scale(dpr, dpr);
-        ctxPixel.clearRect(0, 0, pxCount, barHeight);
-        
-        for (let x = 0; x < pxCount; x++) {
-            const v = Math.round(original[x]);
-            ctxPixel.fillStyle = `rgb(${v},${v},${v})`;
-            ctxPixel.fillRect(x, 0, 1, barHeight);
-        }
-    }
-
     // メインのグラフ描画処理
     function drawGraph() {
         resizeCanvas();
@@ -488,9 +410,6 @@
         for (let x = 0; x < original.length; x++) {
             sharpened[x] = applyUSM(original[x], blurred[x], amount, threshold);
         }
-        
-        drawDensityGradientBar(sharpened);
-        drawDensityGradientBarPixel(sharpened);
 
         // グラフの描画設定
         const padX = 40;
@@ -503,6 +422,20 @@
         // 背景グリッド
         ctx.strokeStyle = '#e0e0e0';
         ctx.lineWidth = 1;
+        
+        // 濃度値で背景を塗り分け
+        const cellWidth = graphWidth / 20; // グリッドは20分割
+        for (let i = 0; i < sharpened.length; i++) {
+            // 背景の色（元の濃度値に基づいたグレー、不透明）
+            const grayValue = Math.round(sharpened[i]);
+            ctx.fillStyle = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+            
+            // 各セルの左端から次のセルの左端まで、グラフの高さ全体を塗りつぶす
+            const cellLeft = graphX + i * cellWidth;
+            const cellRight = graphX + (i + 1) * cellWidth;
+            
+            ctx.fillRect(cellLeft, graphY, cellRight - cellLeft, graphHeight);
+        }
         
         // 水平グリッド
         for (let i = 0; i <= 10; i++) {
@@ -554,7 +487,25 @@
         }
 
         // 線グラフを描画する関数
-        function drawLine(data, color, lineWidth = 2) {
+        function drawLine(data, color, lineWidth = 2, outline = false) {
+            // アウトラインを描画する場合
+            if (outline) {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = lineWidth + 4; // 白いフチの太さ
+                ctx.beginPath();
+                for (let i = 0; i < data.length; i++) {
+                    const x = graphX + (graphWidth / (data.length - 1)) * i;
+                    const y = graphY + graphHeight - (data[i] / 255) * graphHeight;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 本体の線を描画
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
             ctx.beginPath();
@@ -571,9 +522,9 @@
         }
 
         // 線を描画
-        drawLine(original, '#999', 1);
-        drawLine(blurred, '#87CEEB', 2);
-        drawLine(sharpened, '#FF4444', 3);
+        drawLine(original, '#999', 3);
+        drawLine(blurred, '#87CEEB', 2, true);
+        drawLine(sharpened, '#FF4444', 3, true);
 
         // 凡例
         const legendY = 25;

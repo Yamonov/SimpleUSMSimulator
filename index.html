@@ -516,74 +516,6 @@
                 change[x] = (delta / 255) * 12;
             }
 
-            // 半値幅（左/右）と全幅を算出（px）
-            function computeHalfWidths(arr) {
-                if (!arr || arr.length < 2) return { left: 0, right: 0, full: 0 };
-                const maxVal = Math.max(...arr);
-                if (maxVal <= 0) return { left: 0, right: 0, full: 0 };
-                const half = maxVal / 2;
-
-                // 最大値が連続する場合の中心を使う
-                let peakLeft = 0;
-                let peakRight = arr.length - 1;
-                for (let i = 0; i < arr.length; i++) {
-                    if (arr[i] === maxVal) { peakLeft = i; break; }
-                }
-                for (let i = arr.length - 1; i >= 0; i--) {
-                    if (arr[i] === maxVal) { peakRight = i; break; }
-                }
-                const peakCenter = (peakLeft + peakRight) / 2;
-
-                // 半値を初めて超える位置（左/右）
-                let leftmostAbove = -1;
-                let rightmostAbove = -1;
-                for (let i = 0; i < arr.length; i++) {
-                    if (arr[i] >= half) { leftmostAbove = i; break; }
-                }
-                for (let i = arr.length - 1; i >= 0; i--) {
-                    if (arr[i] >= half) { rightmostAbove = i; break; }
-                }
-
-                const eps = 1e-6;
-                const leftHasNonZero = peakLeft > 0 && arr.slice(0, peakLeft).some(v => v > eps);
-                const rightHasNonZero = peakRight < arr.length - 1 && arr.slice(peakRight + 1).some(v => v > eps);
-
-                // 左交点（半値超えが無い場合は0幅扱い）
-                let xL = 0;
-                if (leftmostAbove === -1 || !leftHasNonZero) {
-                    xL = peakCenter;
-                } else if (leftmostAbove <= 0) {
-                    xL = 0;
-                } else {
-                    const y0 = arr[leftmostAbove - 1];
-                    const y1 = arr[leftmostAbove];
-                    const t = (half - y0) / ((y1 - y0) || 1e-9);
-                    xL = (leftmostAbove - 1) + Math.max(0, Math.min(1, t));
-                }
-
-                // 右交点（半値超えが無い場合は0幅扱い）
-                let xR = arr.length - 1;
-                if (rightmostAbove === -1 || !rightHasNonZero) {
-                    xR = peakCenter;
-                } else if (rightmostAbove >= arr.length - 1) {
-                    xR = arr.length - 1;
-                } else {
-                    const y0 = arr[rightmostAbove];
-                    const y1 = arr[rightmostAbove + 1];
-                    const t = (half - y0) / ((y1 - y0) || 1e-9);
-                    xR = rightmostAbove + Math.max(0, Math.min(1, t));
-                }
-
-                const left = Math.max(0, peakCenter - xL);
-                const right = Math.max(0, xR - peakCenter);
-                const full = Math.max(0, xR - xL);
-                return { left, right, full };
-            }
-            const halfWidthsPx = computeHalfWidths(change);
-            const leftHalfMm = halfWidthsPx.left * mmPerPx;
-            const rightHalfMm = halfWidthsPx.right * mmPerPx;
-            const fwhmMm = halfWidthsPx.full * mmPerPx;
-
             // グラフ領域
             const padX = 40, padY = 40;
             const graphWidth = canvas.width / (window.devicePixelRatio || 1) - padX * 2;
@@ -621,25 +553,6 @@
             ctx.lineTo(graphX, graphY + graphHeight);
             ctx.lineTo(graphX + graphWidth, graphY + graphHeight);
             ctx.stroke();
-
-            // X軸ラベル：半値幅
-            ctx.fillStyle = '#333';
-            ctx.font = '20px Arial';
-            const baseX = graphX + graphWidth / 2;
-            const baseY = graphY + graphHeight + 35;
-            const leftText = leftHalfMm.toFixed(3);
-            const rightText = rightHalfMm.toFixed(3);
-            const fullText = '（全幅：' + fwhmMm.toFixed(3) + ' mm）';
-            const gap = 10;
-
-            ctx.textAlign = 'right';
-            ctx.fillText(leftText, baseX - gap, baseY);
-            ctx.textAlign = 'center';
-            ctx.fillText('｜', baseX, baseY);
-            ctx.textAlign = 'left';
-            ctx.fillText(rightText, baseX + gap, baseY);
-            const rightWidth = ctx.measureText(rightText).width;
-            ctx.fillText(fullText, baseX + gap + rightWidth + 16, baseY);
 
             // X目盛り（0,5,10,15,20）
             ctx.fillStyle = '#666';
